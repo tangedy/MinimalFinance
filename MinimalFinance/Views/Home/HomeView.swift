@@ -88,17 +88,17 @@ struct HomeView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Recent")
+                        Text("Transactions")
                             .font(.subheadline)
                             .foregroundStyle(AppTheme.secondaryText)
 
-                        if transactions.isEmpty {
-                            Text("No transactions yet.")
+                        if currentMonthTransactions.isEmpty {
+                            Text("No transactions this month.")
                                 .font(.body)
                                 .foregroundStyle(AppTheme.secondaryText)
                         } else {
                             List {
-                                ForEach(recentTransactions) { transaction in
+                                ForEach(currentMonthTransactions) { transaction in
                                     Button {
                                         transactionToEdit = transaction
                                     } label: {
@@ -119,7 +119,7 @@ struct HomeView: View {
                             .scrollContentBackground(.hidden)
                             .scrollDisabled(true)
                             .background(AppTheme.background)
-                            .frame(height: recentTransactionsListHeight)
+                            .frame(height: currentMonthTransactionsListHeight)
                         }
                     }
                 }
@@ -148,12 +148,15 @@ struct HomeView: View {
         }
     }
 
-    private var recentTransactions: [Transaction] {
-        Array(transactions.prefix(5))
+    private var currentMonthTransactions: [Transaction] {
+        guard let monthInterval = Calendar.current.dateInterval(of: .month, for: .now) else {
+            return transactions
+        }
+        return transactions.filter { monthInterval.contains($0.date) }
     }
 
-    private var recentTransactionsListHeight: CGFloat {
-        CGFloat(recentTransactions.count) * 56
+    private var currentMonthTransactionsListHeight: CGFloat {
+        CGFloat(currentMonthTransactions.count) * 56
     }
 
     private func deleteTransaction(_ transaction: Transaction) {
