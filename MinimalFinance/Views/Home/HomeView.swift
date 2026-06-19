@@ -10,8 +10,12 @@ struct HomeView: View {
     @State private var pullOffset: CGFloat = 0
     @State private var pullHandler = PullDownAddGestureHandler()
 
-    private let pullThreshold: CGFloat = 72
+    private let pullThreshold = AppTheme.pullRevealHeight
     private let scrollCoordinateSpace = "homeScroll"
+
+    private var pullOvershoot: CGFloat {
+        max(0, pullOffset - pullThreshold)
+    }
 
     private var snapshot: InsightSnapshot {
         InsightEngine.snapshot(transactions: transactions, recurringExpenses: recurringExpenses)
@@ -33,43 +37,76 @@ struct HomeView: View {
             }
             .frame(height: 0)
 
-            PullDownAddReveal(pullOffset: pullOffset, threshold: pullThreshold)
+            VStack(spacing: 0) {
+                PullDownAddReveal(pullOffset: pullOffset, threshold: pullThreshold)
 
-            VStack(alignment: .leading, spacing: AppTheme.sectionSpacing) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("This month")
-                        .font(.subheadline)
-                        .foregroundStyle(AppTheme.secondaryText)
-                    AmountLabel(snapshot.monthTotal)
-                }
+                VStack(alignment: .leading, spacing: AppTheme.sectionSpacing) {
+                    HStack(alignment: .top, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("This month")
+                                .font(.subheadline)
+                                .foregroundStyle(AppTheme.secondaryText)
+                            AmountLabel(snapshot.monthTotal)
+                        }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Spending over time")
-                        .font(.subheadline)
-                        .foregroundStyle(AppTheme.secondaryText)
+                        Spacer()
 
-                    ChartPlaceholder()
-                }
+                        Menu {
+                            Button("Add transaction") {
+                                showAddTransaction = true
+                            }
+                            NavigationLink("Import CSV") {
+                                ImportCSVView()
+                            }
+                            NavigationLink("Recurring") {
+                                RecurringExpensesView()
+                            }
+                            NavigationLink("Categories") {
+                                CategoriesView()
+                            }
+                            NavigationLink("Insights") {
+                                InsightsView()
+                            }
+                            NavigationLink("Settings") {
+                                SettingsView()
+                            }
+                        } label: {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.title3)
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .frame(width: 36, height: 36)
+                        }
+                    }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Recent")
-                        .font(.subheadline)
-                        .foregroundStyle(AppTheme.secondaryText)
-
-                    if transactions.isEmpty {
-                        Text("No transactions yet. Pull down to add one.")
-                            .font(.body)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Spending over time")
+                            .font(.subheadline)
                             .foregroundStyle(AppTheme.secondaryText)
-                    } else {
-                        VStack(spacing: 0) {
-                            ForEach(transactions.prefix(5)) { transaction in
-                                TransactionRow(transaction: transaction)
+
+                        ChartPlaceholder()
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Recent")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.secondaryText)
+
+                        if transactions.isEmpty {
+                            Text("No transactions yet. Pull down to add one.")
+                                .font(.body)
+                                .foregroundStyle(AppTheme.secondaryText)
+                        } else {
+                            VStack(spacing: 0) {
+                                ForEach(transactions.prefix(5)) { transaction in
+                                    TransactionRow(transaction: transaction)
+                                }
                             }
                         }
                     }
                 }
+                .padding(AppTheme.contentPadding)
             }
-            .padding(AppTheme.contentPadding)
+            .offset(y: -pullOvershoot)
         }
         .scrollBounceBehavior(.always, axes: .vertical)
         .coordinateSpace(name: scrollCoordinateSpace)

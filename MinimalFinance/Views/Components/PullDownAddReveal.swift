@@ -9,13 +9,18 @@ struct PullDownAddReveal: View {
         min(1, max(0, pullOffset / threshold))
     }
 
+    private var visibleHeight: CGFloat {
+        min(threshold, max(0, pullOffset))
+    }
+
     var body: some View {
         Text("Add transaction")
             .font(.subheadline)
             .foregroundStyle(AppTheme.secondaryText)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppTheme.contentPadding)
-            .frame(height: max(0, pullOffset), alignment: .bottomLeading)
+            .padding(.top, AppTheme.contentPadding * progress)
+            .frame(height: visibleHeight, alignment: .topLeading)
             .opacity(Double(progress))
             .scaleEffect(0.9 + (0.1 * progress), anchor: .leading)
     }
