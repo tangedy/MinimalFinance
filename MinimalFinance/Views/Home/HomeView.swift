@@ -7,6 +7,7 @@ struct HomeView: View {
     @Query(filter: #Predicate<RecurringExpense> { $0.isActive }) private var recurringExpenses: [RecurringExpense]
 
     @Binding var showAddTransaction: Bool
+    @Binding var showImportCSV: Bool
     @State private var transactionToEdit: Transaction?
     @State private var pullOffset: CGFloat = 0
     @State private var pullHandler = PullDownAddGestureHandler()
@@ -31,7 +32,7 @@ struct HomeView: View {
                         pullHandler.process(
                             rawOffset: newValue,
                             threshold: pullThreshold,
-                            isEnabled: !showAddTransaction && transactionToEdit == nil,
+                            isEnabled: !showAddTransaction && !showImportCSV && transactionToEdit == nil,
                             pullOffset: &pullOffset
                         )
                     }
@@ -56,8 +57,8 @@ struct HomeView: View {
                             Button("Add transaction") {
                                 showAddTransaction = true
                             }
-                            NavigationLink("Import CSV") {
-                                ImportCSVView()
+                            Button("Import CSV") {
+                                showImportCSV = true
                             }
                             NavigationLink("Recurring") {
                                 RecurringExpensesView()
@@ -142,6 +143,11 @@ struct HomeView: View {
         .sheet(item: $transactionToEdit) { transaction in
             AddTransactionView(transactionToEdit: transaction)
         }
+        .sheet(isPresented: $showImportCSV) {
+            NavigationStack {
+                ImportCSVView()
+            }
+        }
         .onAppear {
             SeedDataService.seedIfNeeded(modelContext: modelContext)
         }
@@ -190,6 +196,6 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(showAddTransaction: .constant(false))
+    HomeView(showAddTransaction: .constant(false), showImportCSV: .constant(false))
         .modelContainer(PreviewSampleData.container)
 }

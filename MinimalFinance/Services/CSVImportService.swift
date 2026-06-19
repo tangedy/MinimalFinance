@@ -1,18 +1,22 @@
 import Foundation
+import SwiftData
 
 struct ParsedCSVRow: Identifiable {
     let id = UUID()
-    let date: String
-    let amount: String
-    let description: String
-    let rawValues: [String]
+    let date: Date
+    let merchant: String
+    let amount: Decimal
+    let kind: TransactionKind
 }
 
 struct CSVColumnMapping {
     let dateIndex: Int?
-    let amountIndex: Int?
     let descriptionIndex: Int?
+    let debitIndex: Int?
+    let creditIndex: Int?
+    let amountIndex: Int?
     let headers: [String]
+    let hasHeaderRow: Bool
 }
 
 enum CSVImportService {
@@ -22,24 +26,67 @@ enum CSVImportService {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
-        guard let headerLine = lines.first else {
-            return (CSVColumnMapping(dateIndex: nil, amountIndex: nil, descriptionIndex: nil, headers: []), [])
+        guard !lines.isEmpty else {
+            return (emptyMapping, [])
         }
 
-        let headers = splitCSVRow(headerLine)
-        let mapping = detectColumnMapping(headers: headers)
+        let firstFields = parseCSVFields(lines[0])
+        let hasHeaderRow = !looksLikeDate(firstFields.first ?? "")
 
-        let dataRows = lines.dropFirst().map { line -> ParsedCSVRow in
-            let values = splitCSVRow(line)
-            return ParsedCSVRow(
-                date: value(at: mapping.dateIndex, in: values),
-                amount: value(at: mapping.amountIndex, in: values),
-                description: value(at: mapping.descriptionIndex, in: values),
-                rawValues: values
+        let mapping: CSVColumnMapping
+        let dataLines: ArraySlice<String>
+
+        if hasHeaderRow {
+            mapping = detectColumnMapping(headers: firstFields)
+            dataLines = lines.dropFirst()
+        } else if firstFields.count >= 4 {
+            mapping = CSVColumnMapping(
+                dateIndex: 0,
+                descriptionIndex: 1,
+                debitIndex: 2,
+                creditIndex: 3,
+                amountIndex: nil,
+                headers: ["Date", "Description", "Debit", "Credit", "Balance"],
+                hasHeaderRow: false
             )
+            dataLines = lines[...]
+        } else {
+            mapping = detectColumnMapping(headers: firstFields)
+            dataLines = lines[...]
         }
 
-        return (mapping, dataRows)
+        let rows = dataLines.compactMap { line -> ParsedCSVRow? in
+            let values = parseCSVFields(line)
+            return parseRow(values: values, mapping: mapping)
+        }
+
+        return (mapping, rows)
+    }
+
+    @discardableResult
+    static func importRows(
+        _ rows: [ParsedCSVRow],
+        fileName: String,
+        modelContext: ModelContext
+    ) throws -> ImportBatch {
+        let batch = ImportBatch(fileName: fileName, rowCount: rows.count)
+        modelContext.insert(batch)
+
+        for row in rows {
+            let transaction = Transaction(
+                amount: row.amount,
+                date: row.date,
+                merchant: row.merchant,
+                category: nil,
+                source: .csv,
+                kind: row.kind,
+                importBatch: batch
+            )
+            modelContext.insert(transaction)
+        }
+
+        try modelContext.save()
+        return batch
     }
 
     static func readContents(from url: URL) throws -> String {
@@ -52,39 +99,150 @@ enum CSVImportService {
         return try String(contentsOf: url, encoding: .utf8)
     }
 
+    private static var emptyMapping: CSVColumnMapping {
+        CSVColumnMapping(
+            dateIndex: nil,
+            descriptionIndex: nil,
+            debitIndex: nil,
+            creditIndex: nil,
+            amountIndex: nil,
+            headers: [],
+            hasHeaderRow: false
+        )
+    }
+
+    private static func parseRow(values: [String], mapping: CSVColumnMapping) -> ParsedCSVRow? {
+        guard let dateIndex = mapping.dateIndex,
+              let descriptionIndex = mapping.descriptionIndex,
+              values.indices.contains(dateIndex),
+              values.indices.contains(descriptionIndex) else {
+            return nil
+        }
+
+        let dateString = cleanField(values[dateIndex])
+        guard let date = parseDate(dateString) else { return nil }
+
+        let merchant = cleanField(values[descriptionIndex])
+        guard !merchant.isEmpty else { return nil }
+
+        if let debitIndex = mapping.debitIndex, let creditIndex = mapping.creditIndex,
+           values.indices.contains(debitIndex), values.indices.contains(creditIndex) {
+            let debit = parseAmount(cleanField(values[debitIndex]))
+            let credit = parseAmount(cleanField(values[creditIndex]))
+
+            if let debit, debit > 0 {
+                return ParsedCSVRow(date: date, merchant: merchant, amount: debit, kind: .expense)
+            }
+            if let credit, credit > 0 {
+                return ParsedCSVRow(date: date, merchant: merchant, amount: credit, kind: .income)
+            }
+            return nil
+        }
+
+        if let amountIndex = mapping.amountIndex, values.indices.contains(amountIndex),
+           let amount = parseAmount(cleanField(values[amountIndex])), amount > 0 {
+            return ParsedCSVRow(date: date, merchant: merchant, amount: amount, kind: .expense)
+        }
+
+        return nil
+    }
+
     private static func detectColumnMapping(headers: [String]) -> CSVColumnMapping {
         var dateIndex: Int?
         var amountIndex: Int?
         var descriptionIndex: Int?
+        var debitIndex: Int?
+        var creditIndex: Int?
 
         for (index, header) in headers.enumerated() {
-            let normalized = header.lowercased()
+            let normalized = cleanField(header).lowercased()
             if dateIndex == nil, normalized.contains("date") || normalized.contains("posted") {
                 dateIndex = index
             }
-            if amountIndex == nil, normalized.contains("amount") || normalized.contains("debit") || normalized.contains("credit") {
+            if debitIndex == nil, normalized.contains("debit") || normalized == "withdrawal" {
+                debitIndex = index
+            }
+            if creditIndex == nil, normalized.contains("credit") || normalized == "deposit" {
+                creditIndex = index
+            }
+            if amountIndex == nil, normalized.contains("amount") {
                 amountIndex = index
             }
             if descriptionIndex == nil,
-               normalized.contains("description") || normalized.contains("merchant") || normalized.contains("memo") || normalized.contains("name") {
+               normalized.contains("description") || normalized.contains("merchant")
+                || normalized.contains("memo") || normalized.contains("name") || normalized.contains("payee") {
                 descriptionIndex = index
             }
         }
 
         return CSVColumnMapping(
             dateIndex: dateIndex,
-            amountIndex: amountIndex,
             descriptionIndex: descriptionIndex,
-            headers: headers
+            debitIndex: debitIndex,
+            creditIndex: creditIndex,
+            amountIndex: amountIndex,
+            headers: headers.map(cleanField),
+            hasHeaderRow: true
         )
     }
 
-    private static func splitCSVRow(_ row: String) -> [String] {
-        row.split(separator: ",", omittingEmptySubsequences: false).map { String($0).trimmingCharacters(in: .whitespaces) }
+    private static func parseCSVFields(_ line: String) -> [String] {
+        var fields: [String] = []
+        var current = ""
+        var inQuotes = false
+
+        for character in line {
+            if character == "\"" {
+                inQuotes.toggle()
+            } else if character == ",", !inQuotes {
+                fields.append(current)
+                current = ""
+            } else {
+                current.append(character)
+            }
+        }
+
+        fields.append(current)
+        return fields
     }
 
-    private static func value(at index: Int?, in values: [String]) -> String {
-        guard let index, values.indices.contains(index) else { return "" }
-        return values[index]
+    private static func cleanField(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+    }
+
+    private static func looksLikeDate(_ string: String) -> Bool {
+        parseDate(cleanField(string)) != nil
+    }
+
+    private static func parseDate(_ string: String) -> Date? {
+        let formatters = [
+            "yyyy-MM-dd",
+            "MM/dd/yyyy",
+            "M/d/yyyy",
+            "yyyy/MM/dd"
+        ].map { format -> DateFormatter in
+            let formatter = DateFormatter()
+            formatter.dateFormat = format
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            return formatter
+        }
+
+        for formatter in formatters {
+            if let date = formatter.date(from: string) {
+                return date
+            }
+        }
+        return nil
+    }
+
+    private static func parseAmount(_ string: String) -> Decimal? {
+        guard !string.isEmpty else { return nil }
+        let normalized = string
+            .replacingOccurrences(of: "$", with: "")
+            .replacingOccurrences(of: ",", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return Decimal(string: normalized)
     }
 }

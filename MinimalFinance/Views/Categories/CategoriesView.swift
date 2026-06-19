@@ -40,6 +40,7 @@ struct CategoriesView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .contentMargins(.horizontal, AppTheme.contentPadding, for: .scrollContent)
         .background(AppTheme.background)
         .navigationTitle("Categories")
         .navigationBarTitleDisplayMode(.inline)

@@ -8,8 +8,8 @@ enum AppTheme {
     static let sectionSpacing: CGFloat = 32
     static let pullRevealHeight: CGFloat = contentPadding + 20
 
-    static let incomeColor = Color(red: 0.20, green: 0.65, blue: 0.35)
-    static let expenseColor = Color(red: 0.85, green: 0.28, blue: 0.28)
+    static let incomeColor = Color(red: 0.5216, green: 0.7373, blue: 0.5098)
+    static let expenseColor = Color(red: 1, green: 0.698, blue: 0.702)
 }
 
 enum ChartColors {
