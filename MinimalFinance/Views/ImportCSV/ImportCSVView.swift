@@ -5,13 +5,17 @@ import UniformTypeIdentifiers
 struct ImportCSVView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \Category.sortOrder) private var categories: [Category]
+
+    var onImportComplete: ([RecurrenceSuggestion]) -> Void = { _ in }
 
     @State private var showFileImporter = false
-    @State private var parsedRows: [ParsedCSVRow] = []
+    @State private var previewRows: [ImportPreviewRow] = []
     @State private var columnHeaders: [String] = []
     @State private var selectedFileName = ""
     @State private var importError: String?
     @State private var isImporting = false
+    @State private var editingRowID: UUID?
 
     var body: some View {
         ScrollView {
@@ -42,30 +46,26 @@ struct ImportCSVView: View {
                     }
                 }
 
-                if parsedRows.isEmpty {
+                if previewRows.isEmpty {
                     Text("No rows loaded yet.")
                         .foregroundStyle(AppTheme.secondaryText)
                 } else {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Preview (\(parsedRows.count) rows)")
+                        Text("Preview (\(previewRows.count) rows)")
                             .font(.subheadline)
                             .foregroundStyle(AppTheme.secondaryText)
 
-                        ForEach(parsedRows) { row in
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(row.merchant)
-                                        .font(.body)
-                                    Text(row.date, style: .date)
-                                        .font(.caption)
-                                        .foregroundStyle(AppTheme.secondaryText)
-                                }
-                                Spacer(minLength: 12)
-                                Text(displayAmount(for: row), format: .currency(code: currencyCode))
-                                    .font(.body)
-                                    .foregroundStyle(row.kind == .income ? AppTheme.incomeColor : AppTheme.primaryText)
+                        Text(categorizationSummary)
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.secondaryText)
+
+                        ForEach(previewRows) { row in
+                            ImportPreviewRowView(
+                                row: row,
+                                currencyCode: currencyCode
+                            ) {
+                                editingRowID = row.id
                             }
-                            .padding(.vertical, 6)
                         }
                     }
                 }
@@ -77,7 +77,7 @@ struct ImportCSVView: View {
                 }
             }
             .padding(AppTheme.contentPadding)
-            .padding(.bottom, parsedRows.isEmpty ? 0 : 80)
+            .padding(.bottom, previewRows.isEmpty ? 0 : 80)
         }
         .background(AppTheme.background)
         .navigationTitle("Import CSV")
@@ -88,7 +88,7 @@ struct ImportCSVView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if !parsedRows.isEmpty {
+            if !previewRows.isEmpty {
                 Button {
                     confirmImport()
                 } label: {
@@ -97,7 +97,7 @@ struct ImportCSVView: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Confirm import (\(parsedRows.count))")
+                            Text("Confirm import (\(previewRows.count))")
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -116,14 +116,38 @@ struct ImportCSVView: View {
         ) { result in
             handleFileImport(result)
         }
+        .sheet(isPresented: Binding(
+            get: { editingRowID != nil },
+            set: { if !$0 { editingRowID = nil } }
+        )) {
+            if let rowID = editingRowID {
+                CategoryOverrideSheet(
+                    categories: categories,
+                    selected: previewRows.first(where: { $0.id == rowID })?.effectiveCategory
+                ) { category in
+                    applyCategoryOverride(rowID: rowID, category: category)
+                    editingRowID = nil
+                }
+            }
+        }
+        .onAppear {
+            SeedDataService.seedIfNeeded(modelContext: modelContext)
+        }
     }
 
     private var currencyCode: String {
         UserDefaults.standard.string(forKey: "currencyCode") ?? "USD"
     }
 
-    private func displayAmount(for row: ParsedCSVRow) -> Decimal {
-        row.kind == .expense ? -row.amount : row.amount
+    private var categorizationSummary: String {
+        let autoCount = previewRows.filter(\.isAutoCategorized).count
+        let reviewCount = previewRows.filter(\.needsReview).count
+        return "Auto-categorized \(autoCount) of \(previewRows.count) · \(reviewCount) need review"
+    }
+
+    private func applyCategoryOverride(rowID: UUID, category: Category?) {
+        guard let index = previewRows.firstIndex(where: { $0.id == rowID }) else { return }
+        previewRows[index].overrideCategory = category
     }
 
     private func handleFileImport(_ result: Result<[URL], Error>) {
@@ -136,10 +160,10 @@ struct ImportCSVView: View {
                 let contents = try CSVImportService.readContents(from: url)
                 let parsed = CSVImportService.parse(contents: contents)
                 columnHeaders = parsed.mapping.headers
-                parsedRows = parsed.rows
                 selectedFileName = url.lastPathComponent
+                previewRows = CSVImportService.categorize(rows: parsed.rows, modelContext: modelContext)
 
-                if parsed.rows.isEmpty {
+                if previewRows.isEmpty {
                     importError = "No valid transactions found in this file."
                 }
             } catch {
@@ -151,23 +175,75 @@ struct ImportCSVView: View {
     }
 
     private func confirmImport() {
-        guard !parsedRows.isEmpty, !isImporting else { return }
+        guard !previewRows.isEmpty, !isImporting else { return }
 
         isImporting = true
         importError = nil
 
         do {
             _ = try CSVImportService.importRows(
-                parsedRows,
+                previewRows,
                 fileName: selectedFileName.isEmpty ? "import.csv" : selectedFileName,
                 modelContext: modelContext
             )
+
+            let transactions = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
+            let recurring = (try? modelContext.fetch(FetchDescriptor<RecurringExpense>())) ?? []
+            let suggestions = RecurrenceDetector.detect(
+                transactions: transactions,
+                existingRecurring: recurring
+            )
+
             isImporting = false
+            onImportComplete(suggestions)
             dismiss()
         } catch {
             isImporting = false
             importError = "Import failed: \(error.localizedDescription)"
         }
+    }
+}
+
+private struct CategoryOverrideSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let categories: [Category]
+    let selected: Category?
+    let onSelect: (Category?) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(categories) { category in
+                    Button {
+                        onSelect(category)
+                        dismiss()
+                    } label: {
+                        HStack {
+                            Text(category.name)
+                                .foregroundStyle(AppTheme.primaryText)
+                            Spacer()
+                            if selected?.persistentModelID == category.persistentModelID {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                    }
+                    .plainListRow()
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.background)
+            .navigationTitle("Category")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 

@@ -11,6 +11,8 @@ struct HomeView: View {
     @State private var transactionToEdit: Transaction?
     @State private var pullOffset: CGFloat = 0
     @State private var pullHandler = PullDownAddGestureHandler()
+    @State private var recurrenceSuggestions: [RecurrenceSuggestion] = []
+    @State private var showRecurrenceSuggestions = false
 
     private let pullThreshold = AppTheme.pullRevealHeight
     private let scrollCoordinateSpace = "homeScroll"
@@ -145,8 +147,14 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showImportCSV) {
             NavigationStack {
-                ImportCSVView()
+                ImportCSVView { suggestions in
+                    recurrenceSuggestions = suggestions
+                    showRecurrenceSuggestions = !suggestions.isEmpty
+                }
             }
+        }
+        .sheet(isPresented: $showRecurrenceSuggestions) {
+            RecurrenceSuggestionSheet(suggestions: recurrenceSuggestions)
         }
         .onAppear {
             SeedDataService.seedIfNeeded(modelContext: modelContext)

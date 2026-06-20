@@ -7,6 +7,6 @@ struct MinimalFinanceApp: App {
         WindowGroup {
             AppRouter()
         }
-        .modelContainer(for: [Transaction.self, Category.self, RecurringExpense.self, ImportBatch.self])
+        .modelContainer(for: [Transaction.self, Category.self, RecurringExpense.self, ImportBatch.self, CategoryRule.self])
     }
 }

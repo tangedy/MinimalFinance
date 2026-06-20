@@ -153,6 +153,11 @@ struct AddTransactionView: View {
         }
 
         try? modelContext.save()
+
+        if selectedKind == .expense, let category {
+            CategoryRuleService.learn(merchant: trimmedMerchant, category: category, modelContext: modelContext)
+        }
+
         dismiss()
     }
 }

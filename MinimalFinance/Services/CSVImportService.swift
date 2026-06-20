@@ -9,6 +9,48 @@ struct ParsedCSVRow: Identifiable {
     let kind: TransactionKind
 }
 
+struct ImportPreviewRow: Identifiable {
+    let id: UUID
+    let date: Date
+    let merchant: String
+    let normalizedMerchant: String
+    let amount: Decimal
+    let kind: TransactionKind
+    let suggestedCategory: Category?
+    let confidence: Double
+    let source: SuggestionSource?
+    var overrideCategory: Category?
+
+    var effectiveCategory: Category? {
+        overrideCategory ?? suggestedCategory
+    }
+
+    var isAutoCategorized: Bool {
+        guard kind == .expense else { return false }
+        guard let suggestedCategory, let source else { return false }
+        return suggestedCategory.name != "Other"
+            && confidence >= 0.55
+            && source != .fallback
+    }
+
+    var needsReview: Bool {
+        kind == .expense && !isAutoCategorized
+    }
+
+    init(from row: ParsedCSVRow, suggestion: CategorySuggestion?) {
+        id = row.id
+        date = row.date
+        merchant = row.merchant
+        normalizedMerchant = MerchantNormalizer.normalize(row.merchant)
+        amount = row.amount
+        kind = row.kind
+        suggestedCategory = suggestion?.category
+        confidence = suggestion?.confidence ?? 0
+        source = suggestion?.source
+        overrideCategory = nil
+    }
+}
+
 struct CSVColumnMapping {
     let dateIndex: Int?
     let descriptionIndex: Int?
@@ -63,9 +105,27 @@ enum CSVImportService {
         return (mapping, rows)
     }
 
+    static func categorize(rows: [ParsedCSVRow], modelContext: ModelContext) -> [ImportPreviewRow] {
+        let categories = (try? modelContext.fetch(FetchDescriptor<Category>())) ?? []
+        let rules = (try? modelContext.fetch(FetchDescriptor<CategoryRule>())) ?? []
+        let history = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
+
+        return rows.map { row in
+            let suggestion = CategorizationEngine.suggest(
+                merchant: row.merchant,
+                amount: row.amount,
+                kind: row.kind,
+                categories: categories,
+                rules: rules,
+                history: history
+            )
+            return ImportPreviewRow(from: row, suggestion: suggestion)
+        }
+    }
+
     @discardableResult
     static func importRows(
-        _ rows: [ParsedCSVRow],
+        _ rows: [ImportPreviewRow],
         fileName: String,
         modelContext: ModelContext
     ) throws -> ImportBatch {
@@ -73,11 +133,15 @@ enum CSVImportService {
         modelContext.insert(batch)
 
         for row in rows {
+            if let override = row.overrideCategory, row.kind == .expense {
+                CategoryRuleService.learn(merchant: row.merchant, category: override, modelContext: modelContext)
+            }
+
             let transaction = Transaction(
                 amount: row.amount,
                 date: row.date,
                 merchant: row.merchant,
-                category: nil,
+                category: row.kind == .expense ? row.effectiveCategory : nil,
                 source: .csv,
                 kind: row.kind,
                 importBatch: batch
