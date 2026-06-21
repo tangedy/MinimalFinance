@@ -12,6 +12,7 @@ struct ImportCSVView: View {
     @State private var showFileImporter = false
     @State private var previewRows: [ImportPreviewRow] = []
     @State private var columnHeaders: [String] = []
+    @State private var detectedFormat = ""
     @State private var selectedFileName = ""
     @State private var importError: String?
     @State private var isImporting = false
@@ -31,6 +32,12 @@ struct ImportCSVView: View {
 
                 if !selectedFileName.isEmpty {
                     Text("Selected: \(selectedFileName)")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.secondaryText)
+                }
+
+                if !detectedFormat.isEmpty {
+                    Text("Detected format: \(detectedFormat)")
                         .font(.subheadline)
                         .foregroundStyle(AppTheme.secondaryText)
                 }
@@ -160,6 +167,7 @@ struct ImportCSVView: View {
                 let contents = try CSVImportService.readContents(from: url)
                 let parsed = CSVImportService.parse(contents: contents)
                 columnHeaders = parsed.mapping.headers
+                detectedFormat = parsed.mapping.formatLabel
                 selectedFileName = url.lastPathComponent
                 previewRows = CSVImportService.categorize(rows: parsed.rows, modelContext: modelContext)
 
