@@ -36,7 +36,7 @@ struct AddTransactionView: View {
             Form {
                 Section {
                     Picker("Type", selection: $selectedKind) {
-                        ForEach(TransactionKind.allCases, id: \.self) { kind in
+                        ForEach(TransactionKind.allCases.filter { $0 != .transfer }, id: \.self) { kind in
                             Text(kind.label).tag(kind)
                         }
                     }

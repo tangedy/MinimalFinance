@@ -78,6 +78,11 @@ struct CSVColumnMapping {
     let hasHeaderRow: Bool
 }
 
+struct CSVImportResult {
+    let batch: ImportBatch
+    let neutralizedPairCount: Int
+}
+
 enum CSVImportService {
     static func parse(contents: String) -> (mapping: CSVColumnMapping, rows: [ParsedCSVRow]) {
         let lines = contents
@@ -139,9 +144,11 @@ enum CSVImportService {
         _ rows: [ImportPreviewRow],
         fileName: String,
         modelContext: ModelContext
-    ) throws -> ImportBatch {
+    ) throws -> CSVImportResult {
         let batch = ImportBatch(fileName: fileName, rowCount: rows.count)
         modelContext.insert(batch)
+
+        var importedTransactions: [Transaction] = []
 
         for row in rows {
             if let override = row.overrideCategory, row.kind == .expense {
@@ -158,10 +165,17 @@ enum CSVImportService {
                 importBatch: batch
             )
             modelContext.insert(transaction)
+            importedTransactions.append(transaction)
         }
 
         try modelContext.save()
-        return batch
+
+        let neutralizedPairCount = TransferDetector.neutralizePairs(
+            modelContext: modelContext,
+            newTransactions: importedTransactions
+        )
+
+        return CSVImportResult(batch: batch, neutralizedPairCount: neutralizedPairCount)
     }
 
     static func readContents(from url: URL) throws -> String {

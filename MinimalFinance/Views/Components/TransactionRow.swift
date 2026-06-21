@@ -4,14 +4,36 @@ struct TransactionRow: View {
     let transaction: Transaction
 
     private var signedAmount: Decimal {
-        transaction.kind == .expense ? -transaction.amount : transaction.amount
+        switch transaction.kind {
+        case .expense:
+            return -transaction.amount
+        case .income:
+            return transaction.amount
+        case .transfer:
+            return transaction.amount
+        }
     }
 
     private var subtitle: String? {
-        if transaction.kind == .income {
+        switch transaction.kind {
+        case .income:
             return "Income"
+        case .transfer:
+            return "Transfer"
+        case .expense:
+            return transaction.category?.name ?? "Other"
         }
-        return transaction.category?.name ?? "Other"
+    }
+
+    private var amountColor: Color {
+        switch transaction.kind {
+        case .income:
+            return AppTheme.incomeColor
+        case .transfer:
+            return AppTheme.secondaryText
+        case .expense:
+            return AppTheme.primaryText
+        }
     }
 
     var body: some View {
@@ -28,9 +50,7 @@ struct TransactionRow: View {
                 Text(signedAmount, format: .currency(code: UserDefaults.standard.string(forKey: "currencyCode") ?? "USD"))
                     .font(.body)
                     .fontWeight(.light)
-                    .foregroundStyle(
-                        transaction.kind == .income ? AppTheme.incomeColor : AppTheme.primaryText
-                    )
+                    .foregroundStyle(amountColor)
                 if let subtitle {
                     Text(subtitle)
                         .font(.caption)

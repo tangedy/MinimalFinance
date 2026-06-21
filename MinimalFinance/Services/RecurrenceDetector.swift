@@ -1,6 +1,5 @@
 import Foundation
 import SwiftData
-import SwiftData
 
 struct RecurrenceSuggestion: Identifiable {
     let id = UUID()
