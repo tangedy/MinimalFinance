@@ -99,3 +99,7 @@ When you change `project.yml`, regenerate the project:
 ```bash
 xcodegen generate
 ```
+
+xcrun swift Tools/train_categorization_model.swift \
+  MLTrainingData/merchant_categories.csv \
+  MinimalFinance/Resources/Models/MerchantCategoryClassifier.mlmodel
