@@ -107,3 +107,49 @@ CINEPLEX MOVIE,Other,cineplex,validation
 CITY DENTAL CLINIC,Other,dentist,test
 DENTIST OFFICE,Other,dentist,test
 DENTAL CARE PAYMENT,Other,dentist,test
+UBER CANADA/UBE,Transport,uber,train
+FANTUAN DELIVER,Food,fan_tuan,train
+SPOTIFY P3 7.22_V,Subscriptions,spotify,train
+UBERDIRECTCA_PA,Subscriptions,uber_direct_subscription,train
+OBSIDIAN _V,Subscriptions,obsidian,train
+FANDUEL CANADA,Other,fanduel,train
+THE BEST SHOP,Other,best_shop,train
+NEKO NAB,Other,neko_nab,train
+INS MARKET #55,Other,ins_market,train
+YEAH YEAH THAI,Food,yeah_yeah_thai,train
+SEND E-TFR,Transfer,etransfer,train
+E-TRANSFER ***AXS,Transfer,etransfer,train
+E-TRANSFER ***AJK,Transfer,etransfer,train
+SEND E-TFR ***UZQ,Transfer,etransfer,train
+SEND E-TFR ***GTA,Transfer,etransfer,train
+SEND E-TFR ***JHD _M,Transfer,etransfer,train
+PAYPAL MSP,Transfer,paypal_transfer,train
+PAYPAL MONEY SENT,Transfer,paypal_transfer,train
+PAYPAL TRANSFER,Transfer,paypal_transfer,train
+WIRE TRANSFER OUT,Transfer,wire_transfer,train
+OUTGOING WIRE PAYMENT,Transfer,wire_transfer,train
+BANK WIRE SENT,Transfer,wire_transfer,train
+WISE MONEY TRANSFER,Transfer,wise_transfer,validation
+WISE TRANSFER SENT,Transfer,wise_transfer,validation
+WISE REMITTANCE,Transfer,wise_transfer,validation
+WESTERN UNION,Transfer,western_union,test
+WESTERN UNION TRANSFER,Transfer,western_union,test
+WESTERN UNION MONEY SEND,Transfer,western_union,test
+OLDNAVY.COM,Clothes,old_navy,train
+OLD NAVY STORE,Clothes,old_navy,train
+OLD NAVY ONLINE,Clothes,old_navy,train
+UNIQLO,Clothes,uniqlo,train
+UNIQLO CANADA,Clothes,uniqlo,train
+UNIQLO CLOTHING,Clothes,uniqlo,train
+H&M,Clothes,h_and_m,train
+H&M STORE,Clothes,h_and_m,train
+H AND M CLOTHING,Clothes,h_and_m,train
+ZARA,Clothes,zara,train
+ZARA CANADA,Clothes,zara,train
+ZARA ONLINE,Clothes,zara,train
+GAP,Clothes,gap,validation
+GAP CANADA,Clothes,gap,validation
+GAP CLOTHING,Clothes,gap,validation
+ARITZIA,Clothes,aritzia,test
+ARITZIA CANADA,Clothes,aritzia,test
+ARITZIA CLOTHING,Clothes,aritzia,test

@@ -39,7 +39,7 @@ private struct GateMetrics {
 }
 
 private let expectedLabels = [
-    "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Other"
+    "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Transfer", "Clothes", "Other"
 ]
 private let expectedLabelSet = Set(expectedLabels)
 private let requiredSplits = Set(["train", "validation", "test"])
@@ -54,7 +54,9 @@ private let keywordBaseline: [String: [String]] = [
         "FOOD", "CAFE", "COFFEE", "MCDONALDS"
     ],
     "Transport": ["UBER", "LYFT", "TRANSIT", "PRESTO", "METROLINX", "FARE", "GAS", "FUEL", "PARKING"],
-    "Subscriptions": ["SPOTIFY", "NETFLIX", "APPLE", "ADOBE", "DISNEY", "YOUTUBE", "PREMIUM"]
+    "Subscriptions": ["SPOTIFY", "NETFLIX", "APPLE", "ADOBE", "DISNEY", "YOUTUBE", "PREMIUM"],
+    "Transfer": ["E-TRANSFER", "E-TFR", "INTERAC", "WIRE TRANSFER", "MONEY SENT"],
+    "Clothes": ["OLD NAVY", "OLDNAVY", "UNIQLO", "H&M", "ZARA", "GAP", "ARITZIA"]
 ]
 
 private func run() throws {
@@ -177,14 +179,16 @@ private func validateCorpus(_ rows: [CorpusRow]) throws {
         throw TrainingError.invalidCorpus("Text and merchant_family values must not be empty")
     }
 
-    let duplicateTexts = Dictionary(grouping: rows, by: { $0.text.uppercased() })
+    let duplicateTexts = Dictionary(grouping: rows, by: { normalizeMerchant($0.text) })
         .filter { $0.value.count > 1 }
         .keys
     guard duplicateTexts.isEmpty else {
         throw TrainingError.invalidCorpus("Duplicate text examples: \(duplicateTexts.sorted())")
     }
 
-    let familySplits = Dictionary(grouping: rows, by: \.merchantFamily)
+    let familySplits = Dictionary(grouping: rows) {
+        $0.merchantFamily.lowercased()
+    }
         .mapValues { Set($0.map(\.split)) }
         .filter { $0.value.count > 1 }
     guard familySplits.isEmpty else {
@@ -211,7 +215,7 @@ private func printCorpusSummary(_ rows: [CorpusRow]) {
 }
 
 private func writeTrainingCSV(_ rows: [CorpusRow], to url: URL) throws {
-    let lines = rows.map { "\(csvEscape($0.text)),\(csvEscape($0.label))" }
+    let lines = rows.map { "\(csvEscape(normalizeMerchant($0.text))),\(csvEscape($0.label))" }
     try (["text,label"] + lines).joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
 }
 
@@ -222,13 +226,13 @@ private func predictions(
     try rows.map { row in
         ScoredPrediction(
             expected: row.label,
-            probabilities: try classifier.predictionWithConfidence(from: row.text)
+            probabilities: try classifier.predictionWithConfidence(from: normalizeMerchant(row.text))
         )
     }
 }
 
 private func keywordPrediction(_ row: CorpusRow) -> ScoredPrediction {
-    let normalized = row.text.uppercased()
+    let normalized = normalizeMerchant(row.text)
     let label = keywordBaseline.first(where: { _, keywords in
         keywords.contains(where: normalized.contains)
     })?.key ?? "Other"
@@ -376,6 +380,35 @@ private func parseCSVFields(_ line: String) -> [String] {
 private func csvEscape(_ value: String) -> String {
     guard value.contains(",") || value.contains("\"") || value.contains("\n") else { return value }
     return "\"" + value.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+}
+
+private func normalizeMerchant(_ raw: String) -> String {
+    var value = raw
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+        .uppercased()
+
+    if let range = value.range(of: #"\s*#\d+"#, options: .regularExpression) {
+        value.removeSubrange(range)
+    }
+
+    for suffix in ["_M", "_V", "_T", "_INV"] where value.hasSuffix(suffix) {
+        value = String(value.dropLast(suffix.count))
+    }
+
+    if let range = value.range(of: #"\s+\d+\.\d+$"#, options: .regularExpression) {
+        value.removeSubrange(range)
+    }
+
+    if let range = value.range(of: #"\s+\d+$"#, options: .regularExpression) {
+        value.removeSubrange(range)
+    }
+
+    while value.contains("  ") {
+        value = value.replacingOccurrences(of: "  ", with: " ")
+    }
+
+    return value.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
 private enum TrainingError: LocalizedError {

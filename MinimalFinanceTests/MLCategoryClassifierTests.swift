@@ -18,7 +18,9 @@ final class MLCategoryClassifierTests: XCTestCase {
             throw XCTSkip("Run Tools/train_categorization_model.swift and bundle the exported model to enable this smoke test.")
         }
 
-        let expectedLabels = Set(["Rent", "Tuition", "Food", "Transport", "Subscriptions", "Other"])
+        let expectedLabels = Set([
+            "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Transfer", "Clothes", "Other"
+        ])
         XCTAssertEqual(classifier.availableLabels, expectedLabels)
 
         let hypotheses = classifier.hypotheses(for: "STARBUCKS COFFEE", maximumCount: expectedLabels.count)

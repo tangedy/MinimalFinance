@@ -52,10 +52,16 @@ Categorization uses this precedence:
 3. The bundled Core ML text classifier
 4. The reviewable `Other` fallback
 
-The model predicts the six built-in labels: `Rent`, `Tuition`, `Food`, `Transport`,
-`Subscriptions`, and `Other`. Custom categories still learn through exact merchant rules and
-transaction history; changing the fixed model labels requires retraining and updating the model
-contract tests.
+The model predicts eight built-in labels: `Rent`, `Tuition`, `Food`, `Transport`,
+`Subscriptions`, `Transfer`, `Clothes`, and `Other`. Custom categories still learn through exact
+merchant rules and transaction history; changing the fixed model labels requires retraining and
+updating the model contract tests.
+
+An unmatched outgoing payment classified as `Transfer` remains an expense, so money sent to a
+friend or colleague is represented in spending totals. When `TransferDetector` finds matching
+outgoing and incoming legs for a transfer between the user's own accounts, both transactions are
+changed to transaction kind `transfer`, their categories are cleared, and they are excluded from
+income and expense totals.
 
 The model runs entirely on device through Core ML and Natural Language. Merchant descriptions are
 not sent over the network, logged, or used for automatic on-device training.

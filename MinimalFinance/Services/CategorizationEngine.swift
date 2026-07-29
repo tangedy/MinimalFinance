@@ -20,7 +20,7 @@ enum CategorizationEngine {
     static let mlMinimumMargin = 0.20
 
     private static let supportedMLLabels = Set([
-        "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Other"
+        "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Transfer", "Clothes", "Other"
     ])
 
     static func suggest(

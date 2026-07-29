@@ -13,6 +13,8 @@ final class CategorizationEngineTests: XCTestCase {
     private var food: Category!
     private var transport: Category!
     private var subscriptions: Category!
+    private var transfer: Category!
+    private var clothes: Category!
     private var other: Category!
 
     override func setUp() {
@@ -20,6 +22,8 @@ final class CategorizationEngineTests: XCTestCase {
         food = Category(name: "Food")
         transport = Category(name: "Transport")
         subscriptions = Category(name: "Subscriptions")
+        transfer = Category(name: "Transfer")
+        clothes = Category(name: "Clothes")
         other = Category(name: "Other")
     }
 
@@ -84,6 +88,17 @@ final class CategorizationEngineTests: XCTestCase {
 
         XCTAssertEqual(suggestion?.category.name, "Transport")
         XCTAssertEqual(suggestion?.source, .ml)
+    }
+
+    func testTransferAndClothesMLLabelsAreSupported() {
+        for (merchant, label) in [("SEND E-TFR", "Transfer"), ("OLD NAVY", "Clothes")] {
+            let predictor = StubPredictor(results: [hypothesis(label, 0.91)])
+
+            let suggestion = suggest(merchant: merchant, predictor: predictor)
+
+            XCTAssertEqual(suggestion?.category.name, label)
+            XCTAssertEqual(suggestion?.source, .ml)
+        }
     }
 
     func testLowConfidenceMLPredictionFallsBackToOther() {
@@ -158,7 +173,7 @@ final class CategorizationEngineTests: XCTestCase {
             merchant: merchant,
             amount: 10,
             kind: kind,
-            categories: [food, transport, subscriptions, other],
+            categories: [food, transport, subscriptions, transfer, clothes, other],
             rules: rules,
             history: history,
             predictor: predictor
