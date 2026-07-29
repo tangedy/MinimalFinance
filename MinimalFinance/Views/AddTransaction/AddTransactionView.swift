@@ -5,6 +5,8 @@ struct AddTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Category.sortOrder) private var categories: [Category]
+    @Query private var categoryRules: [CategoryRule]
+    @Query private var transactionHistory: [Transaction]
 
     private let transactionToEdit: Transaction?
 
@@ -16,6 +18,7 @@ struct AddTransactionView: View {
     @State private var selectedCategory: Category?
     @State private var date = Date.now
     @State private var note = ""
+    @State private var hasUserSelectedCategory = false
 
     private enum Field: Hashable {
         case amount
@@ -55,7 +58,7 @@ struct AddTransactionView: View {
                         }
                     formTextField("Merchant or description", text: $merchant, field: .merchant)
                     if selectedKind == .expense {
-                        Picker("Category", selection: $selectedCategory) {
+                        Picker("Category", selection: categorySelection) {
                             ForEach(categories) { category in
                                 Text(category.name).tag(Optional(category))
                             }
@@ -77,7 +80,22 @@ struct AddTransactionView: View {
                 }
             }
             .onAppear(perform: loadExistingTransaction)
+            .onChange(of: focusedField) { previousField, newField in
+                if previousField == .merchant, newField != .merchant {
+                    applyCategorySuggestion()
+                }
+            }
         }
+    }
+
+    private var categorySelection: Binding<Category?> {
+        Binding(
+            get: { selectedCategory },
+            set: { category in
+                selectedCategory = category
+                hasUserSelectedCategory = true
+            }
+        )
     }
 
     private func formTextField(
@@ -109,6 +127,27 @@ struct AddTransactionView: View {
         selectedCategory = transactionToEdit.category ?? categories.first { $0.name == "Other" }
         date = transactionToEdit.date
         note = transactionToEdit.note ?? ""
+    }
+
+    private func applyCategorySuggestion() {
+        let trimmedMerchant = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !isEditing,
+              selectedKind == .expense,
+              !hasUserSelectedCategory,
+              !trimmedMerchant.isEmpty else {
+            return
+        }
+
+        let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? 0
+        let suggestion = CategorizationEngine.suggest(
+            merchant: trimmedMerchant,
+            amount: amount,
+            kind: selectedKind,
+            categories: categories,
+            rules: categoryRules,
+            history: transactionHistory
+        )
+        selectedCategory = suggestion?.category ?? categories.first { $0.name == "Other" }
     }
 
     private static func filterAmountInput(_ value: String) -> String {

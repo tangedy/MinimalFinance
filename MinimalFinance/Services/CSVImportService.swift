@@ -120,7 +120,11 @@ enum CSVImportService {
         return (mapping, rows)
     }
 
-    static func categorize(rows: [ParsedCSVRow], modelContext: ModelContext) -> [ImportPreviewRow] {
+    static func categorize(
+        rows: [ParsedCSVRow],
+        modelContext: ModelContext,
+        predictor: any CategoryPredicting = MLCategoryClassifier.shared
+    ) -> [ImportPreviewRow] {
         let categories = (try? modelContext.fetch(FetchDescriptor<Category>())) ?? []
         let rules = (try? modelContext.fetch(FetchDescriptor<CategoryRule>())) ?? []
         let history = (try? modelContext.fetch(FetchDescriptor<Transaction>())) ?? []
@@ -133,7 +137,8 @@ enum CSVImportService {
                 kind: row.kind,
                 categories: categories,
                 rules: rules,
-                history: history
+                history: history,
+                predictor: predictor
             )
             return ImportPreviewRow(from: row, suggestion: suggestion, otherCategory: otherCategory)
         }

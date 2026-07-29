@@ -4,7 +4,7 @@ import SwiftData
 enum SuggestionSource: String {
     case rule
     case history
-    case scorer
+    case ml
     case fallback
 }
 
@@ -16,25 +16,12 @@ struct CategorySuggestion {
 }
 
 enum CategorizationEngine {
-    private static let subscriptionWhitelist = [
-        "SPOTIFY", "OBSIDIAN", "APPLE.COM/BILL", "NETFLIX", "DISNEY",
-        "AMAZON PRIME", "STEAMGAMES", "STEAM", "HBO", "YOUTUBE", "ADOBE", "FANDUEL"
-    ]
+    static let mlMinimumConfidence = 0.70
+    static let mlMinimumMargin = 0.20
 
-    private static let categoryKeywords: [String: [String]] = [
-        "Subscriptions": [
-            "SPOTIFY", "OBSIDIAN", "NETFLIX", "STEAMGAMES", "STEAM", "APPLE", "BILL",
-            "SUBSCRIPTION", "FANDUEL", "HBO", "YOUTUBE", "ADOBE", "PRIME", "DISNEY"
-        ],
-        "Food": [
-            "TIM HORTONS", "STARBUCKS", "RESTAURANT", "RAMEN", "GROCERY", "FOOD", "EUREST",
-            "MOOSE", "BURGER", "COFFEE", "YOGURT", "BUTTER", "WILD WING", "WING", "AJISEN",
-            "PIZZA", "CAFE", "SUSHI", "TACO", "GRILL", "DINER", "BAKERY"
-        ],
-        "Transport": ["UBER", "LYFT", "TRANSIT", "PRESTO", "GO TRANSIT", "TTC", "GAS", "SHELL"],
-        "Rent": ["RENT", "LANDLORD", "LEASE"],
-        "Tuition": ["TUITION", "UNIVERSITY", "COLLEGE", "SCHOOL"]
-    ]
+    private static let supportedMLLabels = Set([
+        "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Other"
+    ])
 
     static func suggest(
         merchant: String,
@@ -42,7 +29,8 @@ enum CategorizationEngine {
         kind: TransactionKind,
         categories: [Category],
         rules: [CategoryRule],
-        history: [Transaction]
+        history: [Transaction],
+        predictor: any CategoryPredicting = MLCategoryClassifier.shared
     ) -> CategorySuggestion? {
         guard kind == .expense else { return nil }
 
@@ -57,9 +45,13 @@ enum CategorizationEngine {
             return historyMatch
         }
 
-        let scored = scoreCategories(normalized: normalized, categories: categories)
-        if let gated = applyConfidenceGate(scored: scored, normalized: normalized, categories: categories) {
-            return gated
+        let mlHypotheses = mappedMLHypotheses(
+            normalized: normalized,
+            categories: categories,
+            predictor: predictor
+        )
+        if let mlMatch = applyMLConfidenceGate(hypotheses: mlHypotheses) {
+            return mlMatch
         }
 
         if let other {
@@ -67,7 +59,7 @@ enum CategorizationEngine {
                 category: other,
                 confidence: 0.2,
                 source: .fallback,
-                alternatives: scored.prefix(3).map { ($0.category, $0.score) }
+                alternatives: mlHypotheses.prefix(3).map { ($0.category, $0.confidence) }
             )
         }
 
@@ -126,65 +118,44 @@ enum CategorizationEngine {
         return CategorySuggestion(category: category, confidence: 0.90, source: .history, alternatives: [])
     }
 
-    private static func scoreCategories(
+    private static func mappedMLHypotheses(
         normalized: String,
-        categories: [Category]
-    ) -> [(category: Category, score: Double)] {
-        let tokens = Set(MerchantNormalizer.tokens(normalized))
-
-        let scored = categories.compactMap { category -> (Category, Double)? in
-            guard category.name != "Other" else { return nil }
-            let keywords = categoryKeywords[category.name] ?? [category.name.uppercased()]
-            var score = 0.0
-
-            for keyword in keywords {
-                if normalized.contains(keyword) {
-                    score += 1.0
-                }
-                for token in tokens where keyword.contains(token) || token.contains(keyword) {
-                    score += 0.4
-                }
+        categories: [Category],
+        predictor: any CategoryPredicting
+    ) -> [(category: Category, confidence: Double)] {
+        predictor.hypotheses(for: normalized, maximumCount: 3).compactMap { hypothesis in
+            guard hypothesis.confidence.isFinite,
+                  (0...1).contains(hypothesis.confidence),
+                  let supportedLabel = supportedMLLabels.first(where: {
+                      $0.caseInsensitiveCompare(hypothesis.label) == .orderedSame
+                  }),
+                  let category = categories.first(where: {
+                      $0.name.caseInsensitiveCompare(supportedLabel) == .orderedSame
+                  }) else {
+                return nil
             }
-
-            return score > 0 ? (category, score) : nil
+            return (category, hypothesis.confidence)
         }
-
-        let maxScore = scored.map(\.1).max() ?? 1
-        return scored
-            .map { (category: $0.0, score: $0.1 / maxScore) }
-            .sorted { $0.score > $1.score }
+        .sorted { $0.confidence > $1.confidence }
     }
 
-    private static func applyConfidenceGate(
-        scored: [(category: Category, score: Double)],
-        normalized: String,
-        categories: [Category]
+    private static func applyMLConfidenceGate(
+        hypotheses: [(category: Category, confidence: Double)]
     ) -> CategorySuggestion? {
-        guard let top = scored.first else { return nil }
-        let secondScore = scored.dropFirst().first?.score ?? 0
-        let margin = top.score - secondScore
-
-        let isSubscriptionWhitelist = subscriptionWhitelist.contains { normalized.contains($0) }
-        let subscriptions = categories.first { $0.name == "Subscriptions" }
-
-        if isSubscriptionWhitelist, let subscriptions {
-            return CategorySuggestion(
-                category: subscriptions,
-                confidence: max(top.score, 0.85),
-                source: .scorer,
-                alternatives: scored.prefix(3).map { ($0.category, $0.score) }
-            )
+        guard let top = hypotheses.first,
+              top.category.name != "Other",
+              top.confidence >= mlMinimumConfidence else {
+            return nil
         }
 
-        if top.score >= 0.45, margin >= 0.10 {
-            return CategorySuggestion(
-                category: top.category,
-                confidence: top.score,
-                source: .scorer,
-                alternatives: scored.prefix(3).map { ($0.category, $0.score) }
-            )
-        }
+        let secondConfidence = hypotheses.dropFirst().first?.confidence ?? 0
+        guard top.confidence - secondConfidence >= mlMinimumMargin else { return nil }
 
-        return nil
+        return CategorySuggestion(
+            category: top.category,
+            confidence: top.confidence,
+            source: .ml,
+            alternatives: Array(hypotheses.prefix(3))
+        )
     }
 }

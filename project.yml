@@ -33,6 +33,8 @@ targets:
       - sdk: SwiftUI.framework
       - sdk: SwiftData.framework
       - sdk: Charts.framework
+      - sdk: CoreML.framework
+      - sdk: NaturalLanguage.framework
 
   MinimalFinanceTests:
     type: bundle.unit-test

@@ -1,0 +1,109 @@
+text,label,merchant_family,split
+MONTHLY RENT PAYMENT,Rent,rent_transfer,train
+RENT ETRANSFER,Rent,rent_transfer,train
+HOUSING RENT PAYMENT,Rent,rent_transfer,train
+MAPLE PROPERTY MANAGEMENT,Rent,maple_property,train
+MAPLE PROPERTY RENT,Rent,maple_property,train
+MAPLE PMT ONLINE,Rent,maple_property,train
+APARTMENT RENT,Rent,apartment_rent,train
+APARTMENT LEASE PAYMENT,Rent,apartment_rent,train
+MONTHLY APARTMENT PAYMENT,Rent,apartment_rent,train
+LANDLORD PAYMENT,Rent,landlord_payment,train
+LANDLORD ETRANSFER,Rent,landlord_payment,train
+LEASE PAYMENT LANDLORD,Rent,landlord_payment,train
+RESIDENCE PORTAL RENT,Rent,residence_portal,validation
+RESIDENCE MONTHLY PAYMENT,Rent,residence_portal,validation
+TENANT PORTAL PAYMENT,Rent,residence_portal,validation
+CITY HOUSING CORPORATION,Rent,housing_corp,test
+CITY HOUSING RENT,Rent,housing_corp,test
+HOUSING CORP LEASE,Rent,housing_corp,test
+UNIVERSITY OF TORONTO TUITION,Tuition,uoft,train
+UOFT STUDENT ACCOUNT,Tuition,uoft,train
+U OF T TUITION PAYMENT,Tuition,uoft,train
+UNIVERSITY OF WATERLOO,Tuition,waterloo,train
+WATERLOO TUITION,Tuition,waterloo,train
+UW STUDENT FEES,Tuition,waterloo,train
+YORK UNIVERSITY TUITION,Tuition,york,train
+YORKU STUDENT ACCOUNT,Tuition,york,train
+YORK UNIVERSITY FEES,Tuition,york,train
+SENECA COLLEGE TUITION,Tuition,seneca,train
+SENECA STUDENT FEES,Tuition,seneca,train
+SENECA COLLEGE PAYMENT,Tuition,seneca,train
+TORONTO METROPOLITAN UNIVERSITY,Tuition,tmu,validation
+TMU TUITION PAYMENT,Tuition,tmu,validation
+TMU STUDENT ACCOUNT,Tuition,tmu,validation
+SHERIDAN COLLEGE TUITION,Tuition,sheridan,test
+SHERIDAN STUDENT FEES,Tuition,sheridan,test
+SHERIDAN COLLEGE PAYMENT,Tuition,sheridan,test
+STARBUCKS,Food,starbucks,train
+STARBUCKS COFFEE,Food,starbucks,train
+STARBUCKS STORE,Food,starbucks,train
+TIM HORTONS,Food,tim_hortons,train
+TIM HORTONS RESTAURANT,Food,tim_hortons,train
+TIMS COFFEE,Food,tim_hortons,train
+LOBLAWS,Food,loblaws,train
+LOBLAWS GROCERY,Food,loblaws,train
+LOBLAWS SUPERMARKET,Food,loblaws,train
+MCDONALDS,Food,mcdonalds,train
+MCDONALDS RESTAURANT,Food,mcdonalds,train
+MCDONALDS MOBILE ORDER,Food,mcdonalds,train
+METRO GROCERY,Food,metro,validation
+METRO SUPERMARKET,Food,metro,validation
+METRO FOOD STORE,Food,metro,validation
+CORNER CAFE,Food,local_cafe,test
+LOCAL CAFE COFFEE,Food,local_cafe,test
+NEIGHBOURHOOD CAFE,Food,local_cafe,test
+UBER TRIP,Transport,uber,train
+UBER CANADA,Transport,uber,train
+UBER RIDE,Transport,uber,train
+PRESTO FARE,Transport,presto,train
+PRESTO TRANSIT,Transport,presto,train
+PRESTO CARD LOAD,Transport,presto,train
+SHELL GAS STATION,Transport,shell,train
+SHELL FUEL,Transport,shell,train
+SHELL SERVICE STATION,Transport,shell,train
+GO TRANSIT,Transport,go_transit,train
+GO TRAIN FARE,Transport,go_transit,train
+METROLINX GO TRANSIT,Transport,go_transit,train
+LYFT RIDE,Transport,lyft,validation
+LYFT CANADA,Transport,lyft,validation
+LYFT TRIP,Transport,lyft,validation
+CITY PARKING,Transport,parking,test
+MUNICIPAL PARKING,Transport,parking,test
+PARKING METER,Transport,parking,test
+SPOTIFY,Subscriptions,spotify,train
+SPOTIFY PREMIUM,Subscriptions,spotify,train
+SPOTIFY CANADA,Subscriptions,spotify,train
+NETFLIX,Subscriptions,netflix,train
+NETFLIX.COM,Subscriptions,netflix,train
+NETFLIX MONTHLY,Subscriptions,netflix,train
+APPLE.COM/BILL,Subscriptions,apple_bill,train
+APPLE SERVICES,Subscriptions,apple_bill,train
+APPLE MEDIA SERVICES,Subscriptions,apple_bill,train
+ADOBE,Subscriptions,adobe,train
+ADOBE CREATIVE CLOUD,Subscriptions,adobe,train
+ADOBE SYSTEMS,Subscriptions,adobe,train
+DISNEY PLUS,Subscriptions,disney,validation
+DISNEYPLUS,Subscriptions,disney,validation
+DISNEY STREAMING,Subscriptions,disney,validation
+YOUTUBE PREMIUM,Subscriptions,youtube,test
+YOUTUBE MEMBERSHIP,Subscriptions,youtube,test
+GOOGLE YOUTUBE,Subscriptions,youtube,test
+SHOPPERS DRUG MART,Other,shoppers_drug,train
+SHOPPERS PHARMACY,Other,shoppers_drug,train
+SHOPPERS RETAIL,Other,shoppers_drug,train
+HOME DEPOT,Other,home_depot,train
+HOME DEPOT CANADA,Other,home_depot,train
+HOME HARDWARE PURCHASE,Other,home_depot,train
+WINNERS,Other,winners,train
+WINNERS HOMESENSE,Other,winners,train
+WINNERS RETAIL,Other,winners,train
+ROGERS COMMUNICATIONS,Other,rogers,train
+ROGERS WIRELESS,Other,rogers,train
+ROGERS INTERNET,Other,rogers,train
+CINEPLEX,Other,cineplex,validation
+CINEPLEX CINEMAS,Other,cineplex,validation
+CINEPLEX MOVIE,Other,cineplex,validation
+CITY DENTAL CLINIC,Other,dentist,test
+DENTIST OFFICE,Other,dentist,test
+DENTAL CARE PAYMENT,Other,dentist,test
