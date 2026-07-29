@@ -34,15 +34,29 @@ targets:
       - sdk: SwiftData.framework
       - sdk: Charts.framework
 
+  MinimalFinanceTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MinimalFinanceTests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+    dependencies:
+      - target: MinimalFinance
+
 schemes:
   MinimalFinance:
     build:
       targets:
         MinimalFinance: all
+        MinimalFinanceTests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - MinimalFinanceTests
     profile:
       config: Release
     analyze:

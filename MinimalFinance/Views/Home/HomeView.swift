@@ -13,16 +13,48 @@ struct HomeView: View {
     @State private var pullHandler = PullDownAddGestureHandler()
     @State private var recurrenceSuggestions: [RecurrenceSuggestion] = []
     @State private var showRecurrenceSuggestions = false
+    @State private var selectedMonth: Date = .now
 
     private let pullThreshold = AppTheme.pullRevealHeight
     private let scrollCoordinateSpace = "homeScroll"
+
+    private static let monthMenuFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "LLLL yyyy"
+        return formatter
+    }()
 
     private var pullOvershoot: CGFloat {
         max(0, pullOffset - pullThreshold)
     }
 
     private var snapshot: InsightSnapshot {
-        InsightEngine.snapshot(transactions: transactions, recurringExpenses: recurringExpenses)
+        InsightEngine.snapshot(transactions: transactions, recurringExpenses: recurringExpenses, now: selectedMonth)
+    }
+
+    private var monthLabelTitle: String {
+        Calendar.current.isDate(selectedMonth, equalTo: .now, toGranularity: .month)
+            ? "Net this month"
+            : "Net in \(Self.monthMenuFormatter.string(from: selectedMonth))"
+    }
+
+    private var availableMonths: [Date] {
+        let calendar = Calendar.current
+        var months = Set(transactions.map { calendar.dateInterval(of: .month, for: $0.date)?.start ?? $0.date })
+        months.insert(calendar.dateInterval(of: .month, for: .now)?.start ?? .now)
+        return months.sorted(by: >)
+    }
+
+    private func monthMenuLabel(_ month: Date) -> String {
+        Calendar.current.isDate(month, equalTo: .now, toGranularity: .month)
+            ? "This month"
+            : Self.monthMenuFormatter.string(from: month)
+    }
+
+    private var noTransactionsMessage: String {
+        Calendar.current.isDate(selectedMonth, equalTo: .now, toGranularity: .month)
+            ? "No transactions this month."
+            : "No transactions in \(Self.monthMenuFormatter.string(from: selectedMonth))."
     }
 
     var body: some View {
@@ -47,9 +79,16 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: AppTheme.sectionSpacing) {
                     HStack(alignment: .top, spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Net this month")
-                                .font(.subheadline)
-                                .foregroundStyle(AppTheme.secondaryText)
+                            Picker(selection: $selectedMonth) {
+                                ForEach(availableMonths, id: \.self) { month in
+                                    Text(monthMenuLabel(month)).tag(month)
+                                }
+                            } label: {
+                                Text(monthLabelTitle)
+                            }
+                            .pickerStyle(.menu)
+                            .font(.subheadline)
+                            .tint(AppTheme.secondaryText)
                             AmountLabel(snapshot.monthNet)
                         }
 
@@ -95,7 +134,7 @@ struct HomeView: View {
                             .foregroundStyle(AppTheme.secondaryText)
 
                         if currentMonthTransactions.isEmpty {
-                            Text("No transactions this month.")
+                            Text(noTransactionsMessage)
                                 .font(.body)
                                 .foregroundStyle(AppTheme.secondaryText)
                         } else {
@@ -164,30 +203,32 @@ struct HomeView: View {
     private var monthlyShape: MonthlyFinancialShape {
         InsightEngine.monthlyFinancialShape(
             transactions: transactions,
-            recurringExpenses: recurringExpenses
+            recurringExpenses: recurringExpenses,
+            for: selectedMonth
         )
     }
 
     private var comparisonSlices: [MonthComparisonSlice] {
         InsightEngine.monthComparison(
             transactions: transactions,
-            recurringExpenses: recurringExpenses
+            recurringExpenses: recurringExpenses,
+            now: selectedMonth
         )
     }
 
     private var categoryItems: [CategoryChartItem] {
-        guard let monthStart = Calendar.current.dateInterval(of: .month, for: .now)?.start else {
+        guard let monthStart = Calendar.current.dateInterval(of: .month, for: selectedMonth)?.start else {
             return []
         }
         return InsightEngine.categoryBreakdown(transactions: transactions, monthStart: monthStart)
     }
 
     private var balancePoints: [BalanceTrendPoint] {
-        InsightEngine.balanceTrend(transactions: transactions)
+        InsightEngine.balanceTrend(transactions: transactions, now: selectedMonth)
     }
 
     private var currentMonthTransactions: [Transaction] {
-        guard let monthInterval = Calendar.current.dateInterval(of: .month, for: .now) else {
+        guard let monthInterval = Calendar.current.dateInterval(of: .month, for: selectedMonth) else {
             return transactions
         }
         return transactions.filter { monthInterval.contains($0.date) }
