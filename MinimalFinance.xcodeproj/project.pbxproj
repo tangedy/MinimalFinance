@@ -25,6 +25,7 @@
 		3F331E1E7927F8F6E592A709 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0399B6079B36C25B709DAC9F /* AppRouter.swift */; };
 		3F725408FC3C7CBAE588D794 /* ImportPreviewRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7347757C39E203F9B07082 /* ImportPreviewRow.swift */; };
 		495099BD1D9D20DE512F4038 /* CSVImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB672155768AF21FC4DE2FB6 /* CSVImportService.swift */; };
+                41742D8368C5CD437FF06B9F /* DataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B657CF2FB7500E9A64475ED /* DataExportService.swift */; };
 		5D255EB7DED1621E1AA31E15 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF390E460133DC7FB4BD0DB /* TransactionRow.swift */; };
 		6987D0235A6CFD2E46911ED4 /* HomeChartCarousel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894B481E8ECD5186D02AFB62 /* HomeChartCarousel.swift */; };
 		784FD9F4DBA70406F63050F8 /* InsightEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35C4D4565CFA85B024C61B05 /* InsightEngine.swift */; };
@@ -49,6 +50,7 @@
 		CB0104393D6469C6F9FE3CD4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00B96E8A1BF78A3D5CBB04CB /* SwiftUI.framework */; };
 		D1E81653D05C82185B6C1E2C /* SwiftData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F136F9F4005BE78AD657DB5 /* SwiftData.framework */; };
 		D58489D8980D9DA0BF0D6FE0 /* RecurringExpensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33D4685E16AA708F6A205F4 /* RecurringExpensesView.swift */; };
+                8A3E4DF3D90BF7B409E51CDF /* RecurringExpenseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5CEEB776E70B273EA817A9C /* RecurringExpenseFormView.swift */; };
 		DD46E6086F682E759DA35D3D /* AddTransactionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1C5C05AB45B38C97DDD1A4 /* AddTransactionView.swift */; };
 		EBE3C0CE1666A3CC83C6776A /* RecurrenceSuggestionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028906FF99EA5AF7DA3143BC /* RecurrenceSuggestionSheet.swift */; };
 		F466238760455EC5B4541443 /* MonthlySnapshotChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC22A76229F12D5901973407 /* MonthlySnapshotChart.swift */; };
@@ -97,6 +99,7 @@
 		C2B2E4D8B37F560600854C0C /* CategoryRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryRule.swift; sourceTree = "<group>"; };
 		C8057B3C61A8FEC71EC63C9F /* CategoryFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryFormView.swift; sourceTree = "<group>"; };
 		D33D4685E16AA708F6A205F4 /* RecurringExpensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringExpensesView.swift; sourceTree = "<group>"; };
+                F5CEEB776E70B273EA817A9C /* RecurringExpenseFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringExpenseFormView.swift; sourceTree = "<group>"; };
 		E29A3DDC5124625E49F75BAD /* ImportCSVView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportCSVView.swift; sourceTree = "<group>"; };
 		E96951CE05416F6C82EDD34F /* RecurrenceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceDetector.swift; sourceTree = "<group>"; };
 		EA8FA983C3AA2368B79A4197 /* TransactionSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionSource.swift; sourceTree = "<group>"; };
@@ -104,6 +107,7 @@
 		F94CDD169E3961787477B086 /* PlainListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainListRow.swift; sourceTree = "<group>"; };
 		FB5CF23E36D299E3059CDBA3 /* CategorizationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorizationEngine.swift; sourceTree = "<group>"; };
 		FB672155768AF21FC4DE2FB6 /* CSVImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImportService.swift; sourceTree = "<group>"; };
+                5B657CF2FB7500E9A64475ED /* DataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -210,6 +214,7 @@
 				58C6F170C2238A51978EC81C /* CategoryRuleService.swift */,
 				FB672155768AF21FC4DE2FB6 /* CSVImportService.swift */,
 				BB8608DF2CABB1F4033B8AD4 /* DataResetService.swift */,
+                                5B657CF2FB7500E9A64475ED /* DataExportService.swift */,
 				35C4D4565CFA85B024C61B05 /* InsightEngine.swift */,
 				7B09B963A3EC5525DD8B56A2 /* MerchantNormalizer.swift */,
 				E96951CE05416F6C82EDD34F /* RecurrenceDetector.swift */,
@@ -322,6 +327,7 @@
 			children = (
 				028906FF99EA5AF7DA3143BC /* RecurrenceSuggestionSheet.swift */,
 				D33D4685E16AA708F6A205F4 /* RecurringExpensesView.swift */,
+                            F5CEEB776E70B273EA817A9C /* RecurringExpenseFormView.swift */,
 			);
 			path = Recurring;
 			sourceTree = "<group>";
@@ -408,6 +414,7 @@
 				05712F82D30EA1D7BDAA9C30 /* CategoryRuleType.swift in Sources */,
 				BDA0EAF29BC348D041AD50C5 /* ChartHelpers.swift in Sources */,
 				A4608BBF5A8FEE12D5A932D7 /* DataResetService.swift in Sources */,
+                                41742D8368C5CD437FF06B9F /* DataExportService.swift in Sources */,
 				6987D0235A6CFD2E46911ED4 /* HomeChartCarousel.swift in Sources */,
 				FF92F28C099743C1B4B22B20 /* HomeView.swift in Sources */,
 				8298DE1184BD5DA0DD0B393C /* ImportBatch.swift in Sources */,
@@ -427,6 +434,7 @@
 				EBE3C0CE1666A3CC83C6776A /* RecurrenceSuggestionSheet.swift in Sources */,
 				9C85C448B6A43FC3DA731496 /* RecurringExpense.swift in Sources */,
 				D58489D8980D9DA0BF0D6FE0 /* RecurringExpensesView.swift in Sources */,
+                            8A3E4DF3D90BF7B409E51CDF /* RecurringExpenseFormView.swift in Sources */,
 				1ED8D9229408E878AFEB661F /* SeedDataService.swift in Sources */,
 				985083BF91468170292B8A19 /* SettingsView.swift in Sources */,
 				3425FC3B745AA5FC2E39FC43 /* Transaction.swift in Sources */,
