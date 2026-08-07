@@ -39,7 +39,7 @@ private struct GateMetrics {
 }
 
 private let expectedLabels = [
-    "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Transfer", "Clothes", "Other"
+    "Rent", "Tuition", "Food", "Transport", "Subscriptions", "Transfer", "Clothes", "Other", "Income", "Entertainment"
 ]
 private let expectedLabelSet = Set(expectedLabels)
 private let requiredSplits = Set(["train", "validation", "test"])
@@ -56,7 +56,8 @@ private let keywordBaseline: [String: [String]] = [
     "Transport": ["UBER", "LYFT", "TRANSIT", "PRESTO", "METROLINX", "FARE", "GAS", "FUEL", "PARKING"],
     "Subscriptions": ["SPOTIFY", "NETFLIX", "APPLE", "ADOBE", "DISNEY", "YOUTUBE", "PREMIUM"],
     "Transfer": ["E-TRANSFER", "E-TFR", "INTERAC", "WIRE TRANSFER", "MONEY SENT"],
-    "Clothes": ["OLD NAVY", "OLDNAVY", "UNIQLO", "H&M", "ZARA", "GAP", "ARITZIA"]
+    "Clothes": ["OLD NAVY", "OLDNAVY", "UNIQLO", "H&M", "ZARA", "GAP", "ARITZIA"],
+    "Entertainment": ["FANDUEL", "FAN DUEL", "SPORTSBOOK", "SPORTS BETTING", "SPORTS WAGERING", "SPORTS BET", "SPORTS WAGER", "SPORTS BETTING", "SPORTS WAGERING", "SPORTS BET", "SPORTS WAGER", "SPORTS BETTING", "SPORTS WAGERING"]
 ]
 
 private func run() throws {
